@@ -15,6 +15,12 @@ const filledOrder = sql.define({
       primaryKey: true
     },
     {
+      name: "fidessa_id",
+      dataType: "text",
+      notNull: true,
+      unique: true
+    },
+    {
       name: "journal_type",
       dataType: "text",
       notNull: true
@@ -106,7 +112,11 @@ const createFilledOrderTable = filledOrder.create().toQuery()
 
 const columns = filledOrder.columns.map(c => c.name)
 
-const insertIntoFilledOrder = o => filledOrder.insert(o).toQuery()
+const insertIntoFilledOrder = o =>
+  filledOrder
+    .insert(o)
+    .returning()
+    .toQuery()
 
 const dropFilledOrderTable = `DROP TABLE IF EXISTS ${name};`
 

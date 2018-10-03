@@ -126,7 +126,7 @@ module.exports = {
   MIFID_CLIENT_TYPE: "",
   OPEN_CLOSE: " ",
   QUANTITY: "",
-  TRADE_DATETIME: "",
+  TRADE_DATETIME: "20180921 09:35:01.612806 +0100s",
   TRADE_SOURCE: "",
   VALUE_DATE: "",
   WAIVER_ID: "",

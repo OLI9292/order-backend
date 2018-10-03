@@ -17,12 +17,11 @@ exports.parse = async (req, res, next) => {
       .on("data", row => allRows.push(row))
       .on("finish", async () => {
         const orders = allRows.map(cleanFidessaTrade).filter(c => c)
-        console.log(orders)
         try {
-          await db.conn.query(insertIntoFilledOrder(orders))
-          return res.status(201).send("success")
+          const results = await db.conn.query(insertIntoFilledOrder(orders))
+          return res.status(201).send(results)
         } catch (error) {
-          return res.status(404).send({ error: error.message })
+          return res.status(422).send({ error: error.message })
         }
       })
   })

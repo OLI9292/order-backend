@@ -19,6 +19,7 @@ module.exports = row => {
     return
   }
 
+  o.fidessa_id = `${row["Internal ID"]}.${row["Internal sequence"]}`
   o.journal_type = "bunched"
   o.external_order_id = null
   o.bunched_order_id = null
@@ -26,7 +27,7 @@ module.exports = row => {
   o.strategy_trade_id = null
   o.external_trade_id = row["Primary ID"]
   o.bunched_trade_id = null // primary artificial key
-  o.trade_date = null // row.TRADE_DATETIME
+  o.trade_date = row.TRADE_DATETIME
   o.executing_account_id = null // (foreign key) default wells fargo
   o.buy_sell = row.BUY_SELL
   o.quantity = parseFloat(row.TRADING_QUANTITY) || null
@@ -38,7 +39,7 @@ module.exports = row => {
   o.strategy_id = null
   o.client_id = null
   o.clearing_account_id = null // dropdown clearing account table
-  o.settlement_date = null // row.SETTLEMENT_DATE
+  o.settlement_date = null //
   o.assigned = false // if filled in client + strategy + clearing acct id - switch to True
 
   return o

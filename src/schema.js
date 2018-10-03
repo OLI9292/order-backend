@@ -1,84 +1,87 @@
-const graphql = require("graphql")
+const { graphql, buildSchema } = require("graphql")
 
-const {
-  GraphQLObjectType,
-  GraphQLID,
-  GraphQLString,
-  GraphQLBoolean,
-  GraphQLList,
-  GraphQLSchema
-} = graphql
-
+const { filledOrder } = require("./sql/filledOrder")
 const { db } = require("./db")
 
-const filledOrderType = new GraphQLObjectType({
-  name: "FilledOrder",
-  fields: () => ({
-    id: { type: GraphQLID },
-    journal_type: { type: GraphQLString },
-    external_order_id: { type: GraphQLString },
-    bunched_order_id: { type: GraphQLString },
-    account_trade_id: { type: GraphQLString },
-    strategy_trade_id: { type: GraphQLString },
-    external_trade_id: { type: GraphQLString },
-    bunched_trade_id: { type: GraphQLString },
-    trade_date: { type: GraphQLString },
-    executing_account_id: { type: GraphQLString },
-    buy_sell: { type: GraphQLString },
-    quantity: { type: GraphQLString },
-    external_symbol: { type: GraphQLString },
-    price: { type: GraphQLString },
-    commissions: { type: GraphQLString },
-    exchange_id: { type: GraphQLString },
-    trader_id: { type: GraphQLString },
-    strategy_id: { type: GraphQLString },
-    client_id: { type: GraphQLString },
-    clearing_account_id: { type: GraphQLString },
-    settlement_date: { type: GraphQLString },
-    assigned: { type: GraphQLBoolean }
-  })
-})
-
-const RootQuery = new GraphQLObjectType({
-  name: "RootQueryType",
-  fields: {
-    filledOrder: {
-      type: new GraphQLList(filledOrderType),
-      resolve(parentValue, args) {
-        const query = `SELECT * FROM filled_order`
-        return db.conn
-          .any(query)
-          .then(data => data)
-          .catch(err => `The error is: ${err}`)
-      }
-    },
-    filledOrderCount: {
-      type: GraphQLString,
-      resolve(parentValue, args) {
-        const query = `SELECT COUNT(*) FROM filled_order`
-        return db.conn
-          .one(query)
-          .then(data => data.count)
-          .catch(err => `The error is: ${err}`)
-      }
-    },
-    login: {
-      type: GraphQLBoolean,
-      args: {
-        username: {
-          type: GraphQLString
-        },
-        password: {
-          type: GraphQLString
-        }
-      },
-      resolve(parentValue, args) {
-        return `${args.username}-${args.password}` === "1-2"
-      }
-    }
+const schema = buildSchema(`
+  type FilledOrder {
+    id: ID
+    fidessa_id: String
+    journal_type: String
+    external_order_id: String
+    bunched_order_id: String
+    account_trade_id: String
+    strategy_trade_id: String
+    external_trade_id: String
+    bunched_trade_id: String
+    trade_date: String
+    executing_account_id: String
+    buy_sell: String
+    quantity: String
+    external_symbol: String
+    price: String
+    commissions: String
+    exchange_id: String
+    trader_id: String
+    strategy_id: String
+    client_id: String
+    clearing_account_id: String
+    settlement_date: String
+    assigned: Boolean
   }
-})
 
-module.exports = new GraphQLSchema({
-  query: RootQuery
-})
+  type Query {
+    random: Float!
+    filledOrder: [FilledOrder]
+    filledOrderCount: Int
+    login(username: String, password: String): Boolean
+  }
+
+  type Mutation {
+    updateFilledOrder(id: String, attr: String, value: String): FilledOrder
+    updateFilledOrders(ids: String, attr: String, value: String): [FilledOrder]
+  }
+`)
+
+const rootValue = {
+  filledOrder: () =>
+    db.conn
+      .any(`SELECT * FROM filled_order`)
+      .then(data => data)
+      .catch(err => `The error is: ${err}`),
+  filledOrderCount: () =>
+    db.conn
+      .one(`SELECT COUNT(*) FROM filled_order`)
+      .then(data => data.count)
+      .catch(err => `The error is: ${err}`),
+  login: params => `${params.username}-${params.password}` === "1-2",
+  updateFilledOrder: params => {
+    const update = {}
+    update[params.attr] = params.value
+    const query = filledOrder
+      .update(update)
+      .where(filledOrder.external_trade_id.equals(params.id))
+      .returning()
+      .toQuery()
+    return db.conn
+      .one(query)
+      .then(data => data)
+      .catch(err => `The error is: ${err}`)
+  },
+  updateFilledOrders: params => {
+    const update = {}
+    update[params.attr] = params.value
+    const query = filledOrder
+      .update(update)
+      .where(filledOrder.external_trade_id.in(params.ids.split(",")))
+      .returning()
+      .toQuery()
+
+    return db.conn
+      .any(query)
+      .then(data => data)
+      .catch(err => `The error is: ${err}`)
+  }
+}
+
+module.exports = { schema, rootValue }

@@ -4,13 +4,13 @@ const app = express()
 const cors = require("cors")
 const bodyParser = require("body-parser")
 
-const schema = require("./schema")
+const { schema, rootValue } = require("./schema")
 
 const FileParser = require("./controllers/fileParser")
 
 app.use("*", cors())
 
-app.use("/upload-file", function(req, res, next) {
+app.use("/file-upload", function(req, res, next) {
   return FileParser.parse(req, res, next)
 })
 
@@ -18,6 +18,7 @@ app.use(
   "/graphql",
   expressGraphQL({
     schema,
+    rootValue,
     graphiql: true
   })
 )
