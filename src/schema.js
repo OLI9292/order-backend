@@ -54,7 +54,8 @@ const rootValue = {
       .one(`SELECT COUNT(*) FROM filled_order`)
       .then(data => data.count)
       .catch(err => `The error is: ${err}`),
-  login: params => `${params.username}-${params.password}` === "1-2",
+  login: params =>
+    `${params.username}-${params.password}` === "temp-username-temp-password",
   updateFilledOrder: params => {
     const update = {}
     update[params.attr] = params.value
