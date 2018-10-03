@@ -30,6 +30,8 @@ const seed = async () => {
 
 const clean = async () => {
   await teardown()
+  console.log("Tearing down db.")
+  console.log("Creating filled_order table.")
   await db.conn.query(createFilledOrderTable)
   return
 }

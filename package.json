@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "NODE_ENV=test mocha src/*/**.test.js --timeout 10000 --exit"
+    "test": "NODE_ENV=test mocha src/*/**.test.js --timeout 10000 --exit",
+    "cleanDb": "node -e 'require(\"./src/db.js\").clean()'"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
