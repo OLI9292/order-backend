@@ -12,7 +12,7 @@ const {
 
 const db = {}
 db.conn = pgp(
-  process.env.DATABASE_URL || {
+  CONFIG.DATABASE_URL || {
     host: CONFIG.DB_HOST,
     port: CONFIG.DB_PORT,
     database: CONFIG.DB_NAME,
