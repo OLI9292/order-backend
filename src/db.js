@@ -11,12 +11,14 @@ const {
 } = require("./sql/filledOrder")
 
 const db = {}
-db.conn = pgp({
-  host: CONFIG.DB_HOST,
-  port: CONFIG.DB_PORT,
-  database: CONFIG.DB_NAME,
-  user: CONFIG.DB_USER
-})
+db.conn = pgp(
+  process.env.DATABASE_URL || {
+    host: CONFIG.DB_HOST,
+    port: CONFIG.DB_PORT,
+    database: CONFIG.DB_NAME,
+    user: CONFIG.DB_USER
+  }
+)
 
 const seed = async () => {
   await clean()
