@@ -34,10 +34,6 @@ const filledOrder = sql.define({
       dataType: "text"
     },
     {
-      name: "account_trade_id",
-      dataType: "text"
-    },
-    {
       name: "strategy_trade_id",
       dataType: "text"
     },
@@ -104,6 +100,25 @@ const filledOrder = sql.define({
     {
       name: "assigned",
       dataType: "boolean"
+    },
+    {
+      name: "grouped_trade_id",
+      dataType: "text",
+      references: {
+        table: "grouped_trade",
+        column: "id",
+        onInsert: "no action"
+      }
+    },
+    {
+      name: "account_trade_id",
+      dataType: "text",
+      references: {
+        table: "account_trade",
+        column: "id",
+        onDelete: "no action",
+        onUpdate: "no action"
+      }
     }
   ]
 })

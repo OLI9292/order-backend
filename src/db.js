@@ -3,12 +3,26 @@ const pgp = require("pg-promise")()
 const CONFIG = require("./lib/config")
 
 const filledOrderMocks = require("./test/mocks/filledOrder").mocks
+const accountTradeMocks = require("./test/mocks/accountTrade").mocks
+const groupedTradeMocks = require("./test/mocks/groupedTrade").mocks
 
 const {
   createFilledOrderTable,
   insertIntoFilledOrder,
   dropFilledOrderTable
 } = require("./sql/filledOrder")
+
+const {
+  createAccountTradeTable,
+  insertIntoAccountTrade,
+  dropAccountTradeTable
+} = require("./sql/accountTrade")
+
+const {
+  createGroupedTradeTable,
+  insertIntoGroupedTrade,
+  dropGroupedTradeTable
+} = require("./sql/groupedTrade")
 
 const db = {}
 db.conn = pgp(
@@ -22,22 +36,27 @@ db.conn = pgp(
 
 const seed = async () => {
   await clean()
-  for (let mock of filledOrderMocks) {
-    await db.conn.query(insertIntoFilledOrder(mock))
-  }
+  // console.log("Seeding db.")
+  await db.conn.query(insertIntoFilledOrder(filledOrderMocks))
+  await db.conn.query(insertIntoAccountTrade(accountTradeMocks))
+  await db.conn.query(insertIntoGroupedTrade(groupedTradeMocks))
   return
 }
 
 const clean = async () => {
+  // console.log("Tearing down db.")
   await teardown()
-  console.log("Tearing down db.")
-  console.log("Creating filled_order table.")
+  // console.log("Creating tables.")
+  await db.conn.query(createGroupedTradeTable)
+  await db.conn.query(createAccountTradeTable)
   await db.conn.query(createFilledOrderTable)
   return
 }
 
 const teardown = async () => {
   await db.conn.query(dropFilledOrderTable)
+  await db.conn.query(dropAccountTradeTable)
+  await db.conn.query(dropGroupedTradeTable)
   return
 }
 
