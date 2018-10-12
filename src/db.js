@@ -68,6 +68,7 @@ const teardown = async () => {
 module.exports = {
   seed,
   clean,
+  createTables,
   teardown,
   db
 }
