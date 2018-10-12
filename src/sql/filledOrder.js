@@ -123,7 +123,10 @@ const filledOrder = sql.define({
   ]
 })
 
-const createFilledOrderTable = filledOrder.create().toQuery()
+const createFilledOrderTable = filledOrder
+  .create()
+  .ifNotExists()
+  .toQuery()
 
 const columns = filledOrder.columns.map(c => c.name)
 

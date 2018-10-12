@@ -44,8 +44,12 @@ const seed = async () => {
 }
 
 const clean = async () => {
-  // console.log("Tearing down db.")
   await teardown()
+  await createTables()
+  return
+}
+
+const createTables = async () => {
   // console.log("Creating tables.")
   await db.conn.query(createGroupedTradeTable)
   await db.conn.query(createAccountTradeTable)
@@ -54,6 +58,7 @@ const clean = async () => {
 }
 
 const teardown = async () => {
+  // console.log("Tearing down db.")
   await db.conn.query(dropFilledOrderTable)
   await db.conn.query(dropAccountTradeTable)
   await db.conn.query(dropGroupedTradeTable)

@@ -32,7 +32,10 @@ const groupedTrade = sql.define({
   ]
 })
 
-const createGroupedTradeTable = groupedTrade.create().toQuery()
+const createGroupedTradeTable = groupedTrade
+  .create()
+  .ifNotExists()
+  .toQuery()
 
 const columns = groupedTrade.columns.map(c => c.name)
 

@@ -46,7 +46,10 @@ const accountTrade = sql.define({
   ]
 })
 
-const createAccountTradeTable = accountTrade.create().toQuery()
+const createAccountTradeTable = accountTrade
+  .create()
+  .ifNotExists()
+  .toQuery()
 
 const columns = accountTrade.columns.map(c => c.name)
 
