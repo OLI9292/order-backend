@@ -1,3 +1,4 @@
+const moment = require("moment")
 const { graphql, buildSchema } = require("graphql")
 const { extend, omit } = require("lodash")
 const uuidv4 = require("uuid/v4")
@@ -50,7 +51,7 @@ const schema = buildSchema(`
     buy_sell: String!
     quantity: String!
     external_symbol: String!
-    allocation_type: String!
+    allocation_type: String
   }
 
   type AllocateResult {
@@ -63,7 +64,7 @@ const schema = buildSchema(`
 
   type Query {
     random: Float!
-    rows(tablename: String!, typename: String!): [Row]
+    rows(tablename: String!, typename: String!, startDate: String!, endDate: String!): [Row]
     login(username: String, password: String): Boolean
   }
 
@@ -76,11 +77,17 @@ const schema = buildSchema(`
 `)
 
 const rootValue = {
-  rows: async params =>
-    db.conn
-      .any(`SELECT * FROM ${params.tablename}`)
+  rows: params => {
+    const { startDate, endDate } = params
+    let query = `SELECT * FROM ${params.tablename}`
+    if (startDate && endDate) {
+      query += ` WHERE trade_date >= '${startDate}'::date AND trade_date < '${endDate}'::date`
+    }
+    return db.conn
+      .any(query)
       .then(data => data.map(d => extend(d, { __typename: params.typename })))
-      .catch(err => `The error is: ${err}`),
+      .catch(err => `The error is: ${err}`)
+  },
 
   login: params =>
     `${params.username}-${params.password}` === "temp-username-temp-password",
@@ -103,7 +110,7 @@ const rootValue = {
 
     const query = filledOrder
       .update(update)
-      .where(filledOrder.external_trade_id.in(params.ids.split(",")))
+      .where(filledOrder.id.in(params.ids.split(",")))
       .returning()
       .toQuery()
 

@@ -38,7 +38,8 @@ describe("filled_order", () => {
   beforeEach(async () => await seed())
 
   it("returns rows from filled_order", async function() {
-    const query = gqlQuery(`rows(tablename: "${tablename}", typename: "${typename}") {
+    const query = gqlQuery(`rows
+      (tablename: "${tablename}", typename: "${typename}", startDate: "", endDate: "",) {
       ... on ${typename} {
         id
       }

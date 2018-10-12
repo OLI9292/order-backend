@@ -16,7 +16,8 @@ describe(`${tablename}`, () => {
   beforeEach(async () => await seed())
 
   it(`returns rows from ${tablename}`, async function() {
-    const query = gqlQuery(`rows(tablename: "${tablename}", typename: "${typename}") {
+    const query = gqlQuery(`rows
+      (tablename: "${tablename}", typename: "${typename}", startDate: "", endDate: "",) {
       ... on ${typename} {
         id
       }

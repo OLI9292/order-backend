@@ -2,7 +2,7 @@ const Busboy = require("busboy")
 const stream = require("stream")
 const csv = require("fast-csv")
 
-const cleanFidessaTrade = require("../services/CleanFidessaTradeService")
+const cleanFidessaTrades = require("../services/CleanFidessaTradeService")
 
 const { insertIntoFilledOrder } = require("../sql/filledOrder")
 const { db } = require("../db")
@@ -16,7 +16,7 @@ exports.parse = async (req, res, next) => {
       .pipe(csv({ headers: true }))
       .on("data", row => allRows.push(row))
       .on("finish", async () => {
-        const orders = allRows.map(cleanFidessaTrade).filter(c => c)
+        const orders = cleanFidessaTrades(allRows).filter(c => c)
         try {
           const results = await db.conn.query(insertIntoFilledOrder(orders))
           return res.status(201).send(results)
