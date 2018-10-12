@@ -5,20 +5,26 @@
   "license": "MIT",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "NODE_ENV=test mocha src/*/**.test.js --timeout 10000 --exit"
+    "test": "NODE_ENV=test mocha src/*/**/**.test.js --timeout 10000 --exit",
+    "cleanDb": "node -e 'require(\"./src/db.js\").clean()'"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
     "busboy": "^0.2.14",
     "chai": "^4.2.0",
     "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
     "express": "^4.16.3",
     "express-graphql": "^0.6.12",
     "fast-csv": "^2.4.1",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.9.2",
+    "lodash": "^4.17.11",
     "mocha": "^5.2.0",
+    "moment": "^2.22.2",
+    "nodemon": "^1.18.4",
     "pg-promise": "^8.4.6",
-    "sql": "^0.78.0"
+    "sql": "^0.78.0",
+    "uuid": "^3.3.2"
   }
 }

@@ -15,6 +15,12 @@ const filledOrder = sql.define({
       primaryKey: true
     },
     {
+      name: "fidessa_id",
+      dataType: "text",
+      notNull: true,
+      unique: true
+    },
+    {
       name: "journal_type",
       dataType: "text",
       notNull: true
@@ -25,10 +31,6 @@ const filledOrder = sql.define({
     },
     {
       name: "bunched_order_id",
-      dataType: "text"
-    },
-    {
-      name: "account_trade_id",
       dataType: "text"
     },
     {
@@ -98,6 +100,25 @@ const filledOrder = sql.define({
     {
       name: "assigned",
       dataType: "boolean"
+    },
+    {
+      name: "grouped_trade_id",
+      dataType: "text",
+      references: {
+        table: "grouped_trade",
+        column: "id",
+        onInsert: "no action"
+      }
+    },
+    {
+      name: "account_trade_id",
+      dataType: "text",
+      references: {
+        table: "account_trade",
+        column: "id",
+        onDelete: "no action",
+        onUpdate: "no action"
+      }
     }
   ]
 })
@@ -106,7 +127,11 @@ const createFilledOrderTable = filledOrder.create().toQuery()
 
 const columns = filledOrder.columns.map(c => c.name)
 
-const insertIntoFilledOrder = o => filledOrder.insert(o).toQuery()
+const insertIntoFilledOrder = o =>
+  filledOrder
+    .insert(o)
+    .returning()
+    .toQuery()
 
 const dropFilledOrderTable = `DROP TABLE IF EXISTS ${name};`
 

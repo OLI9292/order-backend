@@ -1,84 +1,181 @@
-const graphql = require("graphql")
+const moment = require("moment")
+const { graphql, buildSchema } = require("graphql")
+const { extend, omit } = require("lodash")
+const uuidv4 = require("uuid/v4")
 
-const {
-  GraphQLObjectType,
-  GraphQLID,
-  GraphQLString,
-  GraphQLBoolean,
-  GraphQLList,
-  GraphQLSchema
-} = graphql
-
+const { filledOrder } = require("./sql/filledOrder")
+const { groupedTrade, insertIntoGroupedTrade } = require("./sql/groupedTrade")
+const { accountTrade, insertIntoAccountTrade } = require("./sql/accountTrade")
 const { db } = require("./db")
 
-const filledOrderType = new GraphQLObjectType({
-  name: "FilledOrder",
-  fields: () => ({
-    id: { type: GraphQLID },
-    journal_type: { type: GraphQLString },
-    external_order_id: { type: GraphQLString },
-    bunched_order_id: { type: GraphQLString },
-    account_trade_id: { type: GraphQLString },
-    strategy_trade_id: { type: GraphQLString },
-    external_trade_id: { type: GraphQLString },
-    bunched_trade_id: { type: GraphQLString },
-    trade_date: { type: GraphQLString },
-    executing_account_id: { type: GraphQLString },
-    buy_sell: { type: GraphQLString },
-    quantity: { type: GraphQLString },
-    external_symbol: { type: GraphQLString },
-    price: { type: GraphQLString },
-    commissions: { type: GraphQLString },
-    exchange_id: { type: GraphQLString },
-    trader_id: { type: GraphQLString },
-    strategy_id: { type: GraphQLString },
-    client_id: { type: GraphQLString },
-    clearing_account_id: { type: GraphQLString },
-    settlement_date: { type: GraphQLString },
-    assigned: { type: GraphQLBoolean }
-  })
-})
+const schema = buildSchema(`
+  type FilledOrder {
+    id: ID!
+    fidessa_id: String
+    journal_type: String
+    external_order_id: String
+    bunched_order_id: String
+    account_trade_id: String
+    grouped_trade_id: String
+    strategy_trade_id: String
+    external_trade_id: String
+    bunched_trade_id: String
+    trade_date: String
+    executing_account_id: String
+    buy_sell: String
+    quantity: String
+    external_symbol: String
+    price: String
+    commissions: String
+    exchange_id: String
+    trader_id: String
+    strategy_id: String
+    client_id: String
+    clearing_account_id: String
+    settlement_date: String
+    assigned: Boolean
+  }
 
-const RootQuery = new GraphQLObjectType({
-  name: "RootQueryType",
-  fields: {
-    filledOrder: {
-      type: new GraphQLList(filledOrderType),
-      resolve(parentValue, args) {
-        const query = `SELECT * FROM filled_order`
-        return db.conn
-          .any(query)
-          .then(data => data)
-          .catch(err => `The error is: ${err}`)
-      }
-    },
-    filledOrderCount: {
-      type: GraphQLString,
-      resolve(parentValue, args) {
-        const query = `SELECT COUNT(*) FROM filled_order`
-        return db.conn
-          .one(query)
-          .then(data => data.count)
-          .catch(err => `The error is: ${err}`)
-      }
-    },
-    login: {
-      type: GraphQLBoolean,
-      args: {
-        username: {
-          type: GraphQLString
-        },
-        password: {
-          type: GraphQLString
-        }
-      },
-      resolve(parentValue, args) {
-        return `${args.username}-${args.password}` === "1-2"
-      }
+  type AccountTrade {
+    id: ID!
+    client: String!
+    grouped_trade_id: String!
+    buy_sell: String!
+    quantity: String!
+    external_symbol: String!
+    price: String!
+  }
+
+  type GroupedTrade {
+    id: ID!
+    buy_sell: String!
+    quantity: String!
+    external_symbol: String!
+    allocation_type: String
+  }
+
+  type AllocateResult {
+    groupedTrade: GroupedTrade!
+    accountTrades: [AccountTrade]!
+    filledOrders: [FilledOrder]!
+  }
+
+  union Row = FilledOrder | AccountTrade | GroupedTrade
+
+  type Query {
+    random: Float!
+    rows(tablename: String!, typename: String!, startDate: String!, endDate: String!): [Row]
+    login(username: String, password: String): Boolean
+  }
+
+  type Mutation {
+    updateFilledOrder(id: String, attr: String, value: String): FilledOrder
+    updateFilledOrders(ids: String, attr: String, value: String): [FilledOrder]
+    allocateFilledOrder(id: String!, client: String!): AccountTrade
+    allocateFilledOrders(ids: String!, data: String!): AllocateResult
+  }
+`)
+
+const rootValue = {
+  rows: params => {
+    const { startDate, endDate } = params
+    let query = `SELECT * FROM ${params.tablename}`
+    if (startDate && endDate) {
+      query += ` WHERE trade_date >= '${startDate}'::date AND trade_date < '${endDate}'::date`
+    }
+    return db.conn
+      .any(query)
+      .then(data => data.map(d => extend(d, { __typename: params.typename })))
+      .catch(err => `The error is: ${err}`)
+  },
+
+  login: params =>
+    `${params.username}-${params.password}` === "temp-username-temp-password",
+
+  updateFilledOrder: params => {
+    const update = {}
+    update[params.attr] = params.value
+    return db.conn.one(
+      filledOrder
+        .update(update)
+        .where(filledOrder.id.equals(params.id))
+        .returning()
+        .toQuery()
+    )
+  },
+
+  updateFilledOrders: params => {
+    const update = {}
+    update[params.attr] = params.value
+
+    const query = filledOrder
+      .update(update)
+      .where(filledOrder.id.in(params.ids.split(",")))
+      .returning()
+      .toQuery()
+
+    return db.conn
+      .any(query)
+      .then(data => data)
+      .catch(err => `The error is: ${err}`)
+  },
+
+  allocateFilledOrders: async params => {
+    const ids = params.ids.split(",")
+    const data = JSON.parse(decodeURIComponent(params.data))
+    const { buy_sell, external_symbol } = data
+
+    const id = uuidv4()
+    const grouped_trade_id = id
+
+    const groupedTrade = await db.conn.one(
+      insertIntoGroupedTrade(extend(omit(data, "allocations"), { id }))
+    )
+
+    const filledOrders = await db.conn.any(
+      filledOrder
+        .update({ assigned: true, grouped_trade_id })
+        .where(filledOrder.id.in(ids))
+        .returning()
+        .toQuery()
+    )
+
+    const accountTrades = await db.conn.any(
+      insertIntoAccountTrade(
+        data.allocations.map(a =>
+          extend({}, a, {
+            id: uuidv4(),
+            grouped_trade_id,
+            buy_sell,
+            external_symbol
+          })
+        )
+      )
+    )
+
+    return {
+      groupedTrade,
+      accountTrades,
+      filledOrders
     }
   }
-})
+}
+/* 
+Allocations[]
+      client
+      quantity
+      price
 
-module.exports = new GraphQLSchema({
-  query: RootQuery
-})
+      ids of filled orders
+
+    create grouped_trade
+      external_symbol
+      buy_sell
+      quantity
+      allocation_type ( single client, average price, sequence )
+
+    for each client
+      create account trade
+      above - allocation type + client_id, grouped_trade_id
+*/
+module.exports = { schema, rootValue }

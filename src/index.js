@@ -4,13 +4,13 @@ const app = express()
 const cors = require("cors")
 const bodyParser = require("body-parser")
 
-const schema = require("./schema")
+const { schema, rootValue } = require("./schema")
 
 const FileParser = require("./controllers/fileParser")
 
 app.use("*", cors())
 
-app.use("/upload-file", function(req, res, next) {
+app.use("/file-upload", function(req, res, next) {
   return FileParser.parse(req, res, next)
 })
 
@@ -18,9 +18,10 @@ app.use(
   "/graphql",
   expressGraphQL({
     schema,
+    rootValue,
     graphiql: true
   })
 )
-app.listen(4000, () => {
-  console.log("Listening...")
-})
+
+const port = process.env.PORT || 4000
+app.listen(port, () => console.log(`Listening on ${port}.`))

@@ -1,23 +1,26 @@
+const { without } = require("lodash")
 const chai = require("chai")
 const should = chai.should()
 const expect = chai.expect
 
-const cleanFidessaTrade = require("../CleanFidessaTradeService")
+const cleanFidessaTrades = require("../CleanFidessaTradeService")
 
-const mock = require("./mocks/fidessaTrade")
+const mocks = require("./mocks/fidessaTrade")
 
 const { insertIntoFilledOrder, filledOrder } = require("../../sql/filledOrder")
 
-const { db, clean } = require("../../db")
+const { db, seed } = require("../../db")
 
 describe("clean fidessa trade service", () => {
-  beforeEach(async () => await clean())
+  beforeEach(async () => await seed())
 
   it("cleans a fidessa trade", async function() {
-    const clean = cleanFidessaTrade(mock)
+    const clean = cleanFidessaTrades(mocks)[0]
 
-    filledOrder.columns.forEach(col =>
-      chai.assert.include(Object.keys(clean), col.name)
+    without(filledOrder.columns.map(c => c.name), "id").forEach(name =>
+      chai.assert.include(Object.keys(clean), name)
     )
+
+    const result = await db.conn.one(insertIntoFilledOrder(clean))
   })
 })
