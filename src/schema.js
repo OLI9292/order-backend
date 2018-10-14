@@ -1,4 +1,3 @@
-const moment = require("moment")
 const { graphql, buildSchema } = require("graphql")
 const { extend, omit } = require("lodash")
 const uuidv4 = require("uuid/v4")

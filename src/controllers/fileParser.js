@@ -19,8 +19,10 @@ exports.parse = async (req, res, next) => {
         const orders = cleanFidessaTrades(allRows).filter(c => c)
         try {
           const results = await db.conn.query(insertIntoFilledOrder(orders))
+          console.log("HERE")
           return res.status(201).send(results)
         } catch (error) {
+          console.log(error)
           return res.status(422).send({ error: error.message })
         }
       })
