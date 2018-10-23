@@ -1,5 +1,7 @@
 const sql = require("sql")
 sql.setDialect("postgres")
+const moment = require("moment")
+const { extend } = require("lodash")
 
 const { snakeToCamel } = require("../lib/helpers")
 
@@ -28,6 +30,10 @@ const groupedTrade = sql.define({
     {
       name: "allocation_type",
       dataType: "text"
+    },
+    {
+      name: "created_at",
+      dataType: "timestamp"
     }
   ]
 })
@@ -41,7 +47,11 @@ const columns = groupedTrade.columns.map(c => c.name)
 
 const insertIntoGroupedTrade = o =>
   groupedTrade
-    .insert(o)
+    .insert(
+      extend(o, {
+        created_at: moment(new Date()).format("YYYY-MM-DD HH:mm:ss")
+      })
+    )
     .returning()
     .toQuery()
 

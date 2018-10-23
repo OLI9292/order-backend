@@ -43,6 +43,7 @@ const schema = buildSchema(`
     quantity: String!
     external_symbol: String!
     price: String!
+    created_at: String!
   }
 
   type GroupedTrade {
@@ -51,6 +52,7 @@ const schema = buildSchema(`
     quantity: String!
     external_symbol: String!
     allocation_type: String
+    created_at: String!
   }
 
   type AllocateResult {
@@ -72,15 +74,18 @@ const schema = buildSchema(`
     updateFilledOrders(ids: String, attr: String, value: String): [FilledOrder]
     allocateFilledOrder(id: String!, client: String!): AccountTrade
     allocateFilledOrders(ids: String!, data: String!): AllocateResult
+    undoAllocation(groupedTradeId: String!): AllocateResult
   }
 `)
 
 const rootValue = {
   rows: params => {
     const { startDate, endDate } = params
+    const dateAttr =
+      params.tablename === "filled_order" ? "trade_date" : "created_at"
     let query = `SELECT * FROM ${params.tablename}`
     if (startDate && endDate) {
-      query += ` WHERE trade_date >= '${startDate}'::date AND trade_date < '${endDate}'::date`
+      query += ` WHERE ${dateAttr} >= '${startDate}'::date AND ${dateAttr} <= '${endDate}'::date`
     }
     return db.conn
       .any(query)
@@ -117,6 +122,40 @@ const rootValue = {
       .any(query)
       .then(data => data)
       .catch(err => `The error is: ${err}`)
+  },
+
+  undoAllocation: async params => {
+    const { groupedTradeId } = params
+
+    const filledOrders = await db.conn.any(
+      filledOrder
+        .update({ assigned: false, grouped_trade_id: null })
+        .where(filledOrder.grouped_trade_id.equals(groupedTradeId))
+        .returning()
+        .toQuery()
+    )
+
+    const accountTrades = await db.conn.any(
+      accountTrade
+        .delete()
+        .where(accountTrade.grouped_trade_id.equals(groupedTradeId))
+        .returning()
+        .toQuery()
+    )
+
+    const _groupedTrade = await db.conn.one(
+      groupedTrade
+        .delete()
+        .where(groupedTrade.id.equals(groupedTradeId))
+        .returning()
+        .toQuery()
+    )
+
+    return {
+      groupedTrade: _groupedTrade,
+      accountTrades,
+      filledOrders
+    }
   },
 
   allocateFilledOrders: async params => {
@@ -159,22 +198,5 @@ const rootValue = {
     }
   }
 }
-/* 
-Allocations[]
-      client
-      quantity
-      price
 
-      ids of filled orders
-
-    create grouped_trade
-      external_symbol
-      buy_sell
-      quantity
-      allocation_type ( single client, average price, sequence )
-
-    for each client
-      create account trade
-      above - allocation type + client_id, grouped_trade_id
-*/
 module.exports = { schema, rootValue }

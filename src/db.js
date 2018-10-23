@@ -37,9 +37,9 @@ db.conn = pgp(
 const seed = async () => {
   await clean()
   // console.log("Seeding db.")
+  await db.conn.query(insertIntoGroupedTrade(groupedTradeMocks))
   await db.conn.query(insertIntoFilledOrder(filledOrderMocks))
   await db.conn.query(insertIntoAccountTrade(accountTradeMocks))
-  await db.conn.query(insertIntoGroupedTrade(groupedTradeMocks))
   return
 }
 

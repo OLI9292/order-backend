@@ -1,3 +1,5 @@
+const { groupedTradeId } = require("./groupedTrade")
+
 const mocks = [
   {
     fidessa_id: "00000017794ARLO1.1",
@@ -25,6 +27,7 @@ const mocks = [
     fidessa_id: "00000017794ARLO1.3",
     external_trade_id: "00000005485TRLO12",
     journal_type: "bunched",
+    grouped_trade_id: groupedTradeId,
     buy_sell: "S",
     quantity: 3,
     external_symbol: "xyz",
