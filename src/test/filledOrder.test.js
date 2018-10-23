@@ -66,13 +66,13 @@ describe("filled_order", () => {
     const result = await graphql(schema, query, rootValue)
     const { updateFilledOrder } = result.data
 
+    chai.assert.equal(id, updateFilledOrder.id)
     chai.assert.equal(updateFilledOrder[attr], value)
     chai.assert.notEqual(mock[attr], updateFilledOrder[attr])
-    chai.assert.notEqual(id, updateFilledOrder.external_trade_id)
   })
 
   it("updates multiple filled orders", async function() {
-    const ids = mocks.map(m => m.external_trade_id)
+    const ids = [1, 2, 3]
     const attr = "journal_type"
     const value = "account"
 

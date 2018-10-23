@@ -1,7 +1,5 @@
 const sql = require("sql")
 sql.setDialect("postgres")
-const moment = require("moment")
-const { extend } = require("lodash")
 
 const { snakeToCamel } = require("../lib/helpers")
 
@@ -61,11 +59,7 @@ const columns = accountTrade.columns.map(c => c.name)
 
 const insertIntoAccountTrade = o =>
   accountTrade
-    .insert(
-      extend(o, {
-        created_at: moment(new Date()).format("YYYY-MM-DD HH:mm:ss")
-      })
-    )
+    .insert(o)
     .returning()
     .toQuery()
 

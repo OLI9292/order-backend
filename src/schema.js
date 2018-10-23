@@ -1,5 +1,6 @@
 const { graphql, buildSchema } = require("graphql")
 const { extend, omit } = require("lodash")
+const moment = require("moment")
 const uuidv4 = require("uuid/v4")
 
 const { filledOrder } = require("./sql/filledOrder")
@@ -165,9 +166,12 @@ const rootValue = {
 
     const id = uuidv4()
     const grouped_trade_id = id
+    const created_at = moment(new Date()).format("YYYY-MM-DD HH:mm:ss")
 
     const groupedTrade = await db.conn.one(
-      insertIntoGroupedTrade(extend(omit(data, "allocations"), { id }))
+      insertIntoGroupedTrade(
+        extend(omit(data, "allocations"), { id, created_at })
+      )
     )
 
     const filledOrders = await db.conn.any(
@@ -185,7 +189,8 @@ const rootValue = {
             id: uuidv4(),
             grouped_trade_id,
             buy_sell,
-            external_symbol
+            external_symbol,
+            created_at
           })
         )
       )
