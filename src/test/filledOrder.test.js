@@ -9,6 +9,7 @@ const { seed } = require("../db")
 const { gqlQuery, gqlMutation } = require("../lib/helpers")
 
 const mocks = require("./mocks/filledOrder").mocks
+const groupedTradeMock = require("./mocks/groupedTrade").mocks[0]
 
 const allocationData = encodeURIComponent(
   JSON.stringify({
@@ -36,6 +37,7 @@ const typename = "FilledOrder"
 
 describe("filled_order", () => {
   beforeEach(async () => await seed())
+  after(async () => await seed())
 
   it("returns rows from filled_order", async function() {
     const query = gqlQuery(`rows
@@ -64,13 +66,13 @@ describe("filled_order", () => {
     const result = await graphql(schema, query, rootValue)
     const { updateFilledOrder } = result.data
 
+    chai.assert.equal(id, updateFilledOrder.id)
     chai.assert.equal(updateFilledOrder[attr], value)
     chai.assert.notEqual(mock[attr], updateFilledOrder[attr])
-    chai.assert.notEqual(id, updateFilledOrder.external_trade_id)
   })
 
   it("updates multiple filled orders", async function() {
-    const ids = mocks.map(m => m.external_trade_id)
+    const ids = [1, 2, 3]
     const attr = "journal_type"
     const value = "account"
 
@@ -125,5 +127,45 @@ describe("filled_order", () => {
     )
 
     chai.assert.deepEqual(ids.sort(), filledOrders.map(f => f.id).sort())
+  })
+
+  it("reverts an allocation", async function() {
+    const id = groupedTradeMock.id
+    const query = gqlMutation(
+      `undoAllocation(groupedTradeId: "${id}") {
+        groupedTrade {
+          id
+        }
+        accountTrades {
+          id
+          grouped_trade_id
+        }
+        filledOrders {
+          id
+          grouped_trade_id
+          assigned
+        }
+      }`
+    )
+
+    const result = await graphql(schema, query, rootValue)
+    const {
+      groupedTrade,
+      accountTrades,
+      filledOrders
+    } = result.data.undoAllocation
+
+    chai.assert.equal(groupedTrade.id, id)
+
+    chai.assert.isNotEmpty(accountTrades)
+    accountTrades.forEach(trade =>
+      chai.assert.equal(trade.grouped_trade_id, id)
+    )
+
+    chai.assert.isNotEmpty(filledOrders)
+    filledOrders.forEach(trade => {
+      chai.assert.equal(trade.grouped_trade_id, null)
+      chai.assert.isFalse(trade.assigned)
+    })
   })
 })

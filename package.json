@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon src/index.js",
     "test": "NODE_ENV=test mocha src/*/**/**.test.js --timeout 10000 --exit",
-    "cleanDb": "node -e 'require(\"./src/db.js\").clean()'"
+    "cleanDb": "node -e 'require(\"./src/db.js\").clean()'",
+    "createTables": "node -e 'require(\"./src/db.js\").createTables()'"
   },
   "dependencies": {
     "body-parser": "^1.18.3",

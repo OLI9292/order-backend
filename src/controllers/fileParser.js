@@ -21,6 +21,7 @@ exports.parse = async (req, res, next) => {
           const results = await db.conn.query(insertIntoFilledOrder(orders))
           return res.status(201).send(results)
         } catch (error) {
+          console.log(error)
           return res.status(422).send({ error: error.message })
         }
       })

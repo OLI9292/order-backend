@@ -42,11 +42,18 @@ const accountTrade = sql.define({
     {
       name: "price",
       dataType: "float"
+    },
+    {
+      name: "created_at",
+      dataType: "timestamp"
     }
   ]
 })
 
-const createAccountTradeTable = accountTrade.create().toQuery()
+const createAccountTradeTable = accountTrade
+  .create()
+  .ifNotExists()
+  .toQuery()
 
 const columns = accountTrade.columns.map(c => c.name)
 

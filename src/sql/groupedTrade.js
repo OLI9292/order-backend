@@ -28,11 +28,18 @@ const groupedTrade = sql.define({
     {
       name: "allocation_type",
       dataType: "text"
+    },
+    {
+      name: "created_at",
+      dataType: "timestamp"
     }
   ]
 })
 
-const createGroupedTradeTable = groupedTrade.create().toQuery()
+const createGroupedTradeTable = groupedTrade
+  .create()
+  .ifNotExists()
+  .toQuery()
 
 const columns = groupedTrade.columns.map(c => c.name)
 

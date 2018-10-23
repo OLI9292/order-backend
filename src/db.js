@@ -37,15 +37,19 @@ db.conn = pgp(
 const seed = async () => {
   await clean()
   // console.log("Seeding db.")
+  await db.conn.query(insertIntoGroupedTrade(groupedTradeMocks))
   await db.conn.query(insertIntoFilledOrder(filledOrderMocks))
   await db.conn.query(insertIntoAccountTrade(accountTradeMocks))
-  await db.conn.query(insertIntoGroupedTrade(groupedTradeMocks))
   return
 }
 
 const clean = async () => {
-  // console.log("Tearing down db.")
   await teardown()
+  await createTables()
+  return
+}
+
+const createTables = async () => {
   // console.log("Creating tables.")
   await db.conn.query(createGroupedTradeTable)
   await db.conn.query(createAccountTradeTable)
@@ -54,6 +58,7 @@ const clean = async () => {
 }
 
 const teardown = async () => {
+  // console.log("Tearing down db.")
   await db.conn.query(dropFilledOrderTable)
   await db.conn.query(dropAccountTradeTable)
   await db.conn.query(dropGroupedTradeTable)
@@ -63,6 +68,7 @@ const teardown = async () => {
 module.exports = {
   seed,
   clean,
+  createTables,
   teardown,
   db
 }
